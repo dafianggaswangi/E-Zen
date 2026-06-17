@@ -45,11 +45,11 @@ export default function ConfirmationModal({
   const getConfirmButtonClass = () => {
     switch (variant) {
       case 'danger':
-        return 'bg-rose-650 hover:bg-rose-700 text-white shadow-xs focus:ring-rose-500';
+        return 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs focus:ring-rose-500';
       case 'warning':
-        return 'bg-amber-650 hover:bg-amber-700 text-white shadow-xs focus:ring-amber-500';
+        return 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs focus:ring-amber-500';
       case 'success':
-        return 'bg-emerald-650 hover:bg-emerald-700 text-white shadow-xs focus:ring-emerald-500';
+        return 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs focus:ring-emerald-500';
       default:
         return 'bg-slate-900 hover:bg-slate-800 text-white shadow-xs focus:ring-slate-700';
     }

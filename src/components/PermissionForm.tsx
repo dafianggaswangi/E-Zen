@@ -59,6 +59,87 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
   const [guardianName, setGuardianName] = useState('');
   const [guardianPhone, setGuardianPhone] = useState('');
   const [selectedSatpamPhone, setSelectedSatpamPhone] = useState('');
+  
+  // Guardian Search States & Data Extraction
+  const [showGuardianSearch, setShowGuardianSearch] = useState(false);
+  const [guardianSearchQuery, setGuardianSearchQuery] = useState('');
+
+  const uniqueGuardians = React.useMemo(() => {
+    const result: { name: string; phone: string; studentNames: string[] }[] = [];
+    const seenPhones = new Set<string>();
+
+    permissions.forEach(p => {
+      if (!p.guardianPhone || p.guardianPhone === '-') return;
+      // Skip helper/satpam phones if they happen to be in the database
+      if (isSatpamPhone(p.guardianPhone, sheetsConfig)) return;
+
+      const cleanPhone = p.guardianPhone.replace(/[^0-9]/g, '');
+      if (!cleanPhone) return;
+
+      if (!seenPhones.has(cleanPhone)) {
+        seenPhones.add(cleanPhone);
+        result.push({
+          name: p.guardianName || 'Wali Santri',
+          phone: p.guardianPhone,
+          studentNames: p.studentName ? [p.studentName] : []
+        });
+      } else {
+        const existing = result.find(r => r.phone.replace(/[^0-9]/g, '') === cleanPhone);
+        if (existing) {
+          if (p.guardianName && (!existing.name || existing.name === 'Wali Santri')) {
+            existing.name = p.guardianName;
+          }
+          if (p.studentName && !existing.studentNames.includes(p.studentName)) {
+            existing.studentNames.push(p.studentName);
+          }
+        }
+      }
+    });
+
+    return result;
+  }, [permissions, sheetsConfig]);
+
+  const filteredGuardians = React.useMemo(() => {
+    if (!guardianSearchQuery.trim()) return uniqueGuardians;
+    const query = guardianSearchQuery.toLowerCase();
+    return uniqueGuardians.filter(g => 
+      g.name.toLowerCase().includes(query) ||
+      g.phone.includes(query) ||
+      g.studentNames.some(s => s.toLowerCase().includes(query))
+    );
+  }, [uniqueGuardians, guardianSearchQuery]);
+
+  const handlePickDeviceContact = async () => {
+    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+      alert('Browser atau Handphone Anda tidak mendukung Contact Picker API langsung. Silakan gunakan Google Chrome HP / Safari HTTPS, atau ketik kontak manual.');
+      return;
+    }
+    try {
+      const props = ['name', 'tel'];
+      const opts = { multiple: false };
+      // @ts-ignore
+      const contacts = await navigator.contacts.select(props, opts);
+      if (contacts && contacts.length > 0) {
+        const contact = contacts[0];
+        const name = contact.name && contact.name[0] ? contact.name[0] : '';
+        let phone = contact.tel && contact.tel[0] ? contact.tel[0] : '';
+        
+        // Clean phone number format
+        if (phone) {
+          phone = phone.replace(/[^\d+]/g, ''); // keep only digits and plus sign
+        }
+
+        if (name) setGuardianName(name);
+        if (phone) setGuardianPhone(phone);
+      }
+    } catch (err: any) {
+      console.error('Pick contact error:', err);
+      if (err.name !== 'AbortError') {
+        alert('Gagal mengambil kontak handphone: ' + err.message);
+      }
+    }
+  };
+
   const [leaveType, setLeaveType] = useState<'Pulang' | 'Keluar' | 'Sakit' | 'Lainnya'>('Pulang');
   const [reason, setReason] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -247,6 +328,9 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
     });
 
     setSuccessMsg(`Pemberian izin santri atas nama "${studentName}" berhasil disimpan dengan status DIZINKAN!`);
+    setTimeout(() => {
+      setSuccessMsg(null);
+    }, 8000);
     
     // Clear forms
     setSearchQuery('');
@@ -352,6 +436,9 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
       }
 
       setSuccessMsg(`Pemberian izin massal sebanyak ${selectedSantriIds.length} santri berhasil disimpan dengan status DIZINKAN!`);
+      setTimeout(() => {
+        setSuccessMsg(null);
+      }, 8000);
       
       // Clear forms
       setSelectedSantriIds([]);
@@ -420,16 +507,29 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
       <AnimatePresence mode="wait">
         {successMsg && (
           <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-5 p-4 bg-emerald-50 border border-emerald-100 text-emerald-900 rounded-lg flex items-start gap-2.5 text-xs font-semibold"
+            initial={{ opacity: 0, y: -40, scale: 0.9, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, scale: 0.95, x: "-50%" }}
+            className="fixed top-8 left-1/2 z-250 max-w-md w-[calc(100%-2rem)] bg-emerald-650 text-white p-4.5 rounded-2xl shadow-2xl border border-emerald-500/20 flex items-start gap-3.5 backdrop-blur-md"
+            style={{ backgroundColor: '#059669' }}
           >
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
-            <div>
-              <span>Sukses Berhasil!</span>
-              <p className="mt-0.5 text-emerald-800 leading-relaxed font-semibold">{successMsg}</p>
+            <div className="p-2 bg-white/15 text-white rounded-xl border border-white/10 shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-white" />
             </div>
+            <div className="flex-1 space-y-1 pr-6 text-left">
+              <h4 className="font-extrabold text-xs text-white uppercase tracking-wider">BERHASIL DITERBITKAN 🎉</h4>
+              <p className="text-xs text-emerald-50 font-semibold leading-relaxed">{successMsg}</p>
+              <p className="text-[10px] text-emerald-100/90 font-medium leading-relaxed mt-0.5">
+                Silakan buka log perizinan untuk mengirimkan notifikasi ke wali santri/satpam jika diperlukan.
+              </p>
+            </div>
+            <button
+              onClick={() => setSuccessMsg(null)}
+              className="absolute top-3 right-3 text-white/70 hover:text-white hover:bg-white/10 w-6 h-6 rounded-lg transition-all font-bold text-xs flex items-center justify-center cursor-pointer"
+              title="Tutup"
+            >
+              ✕
+            </button>
           </motion.div>
         )}
 
@@ -582,7 +682,29 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
 
           {/* SECTION 2: IDENTITAS WALI */}
           <div className="space-y-3 pt-2.5 border-t border-slate-100">
-            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider font-bold">Langkah 2: Penanggung Jawab / Wali</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider font-bold">Langkah 2: Penanggung Jawab / Wali</h3>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {uniqueGuardians.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGuardianSearch(true)}
+                    className="px-2.5 py-1 text-[10.5px] bg-red-50 hover:bg-red-100 border border-red-200/60 text-red-700 font-extrabold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Search className="w-3 h-3 text-red-650" />
+                    Cari Kontak ({uniqueGuardians.length})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handlePickDeviceContact}
+                  className="px-2.5 py-1 text-[10.5px] bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-705 font-extrabold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                  title="Ambil otomatis nomor dari Kontak Telepon HP Anda"
+                >
+                  <span className="text-xs">📱</span> Pilih Kontak HP
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-655 mb-1 flex items-center gap-1">
@@ -881,7 +1003,29 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
 
           {/* SECTION 2: IDENTITAS WALI (Common for group) */}
           <div className="space-y-3 pt-2.5 border-t border-slate-100">
-            <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider font-bold">Langkah 2: Penanggung Jawab / Pengasuhan</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider font-bold">Langkah 2: Penanggung Jawab / Pengasuhan</h3>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {uniqueGuardians.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGuardianSearch(true)}
+                    className="px-2.5 py-1 text-[10.5px] bg-red-50 hover:bg-red-100 border border-red-200/60 text-red-700 font-extrabold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <Search className="w-3 h-3 text-red-650" />
+                    Cari Kontak ({uniqueGuardians.length})
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handlePickDeviceContact}
+                  className="px-2.5 py-1 text-[10.5px] bg-slate-100 hover:bg-slate-200 border border-slate-250 text-slate-705 font-extrabold rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                  title="Ambil otomatis nomor dari Kontak Telepon HP Anda"
+                >
+                  <span className="text-xs">📱</span> Pilih Kontak HP
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-655 mb-1 flex items-center gap-1">
@@ -1062,6 +1206,121 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
           </div>
         </form>
       )}
+
+      {/* Searchable Guardian Modal Overlay */}
+      <AnimatePresence>
+        {showGuardianSearch && (
+          <div className="fixed inset-0 z-250 flex items-center justify-center p-4">
+            {/* Background Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGuardianSearch(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+            {/* Modal Container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden relative z-10 flex flex-col max-h-[85vh] text-left"
+            >
+              {/* Header */}
+              <div className="p-4 bg-slate-50 border-b border-slate-150 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Cari Kontak Wali Tersimpan</h3>
+                  <p className="text-[10px] text-slate-505 font-medium mt-0.5">Memuat data dari seluruh riwayat izin perizinan di sistem</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowGuardianSearch(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors font-bold text-sm cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Search input bar */}
+              <div className="p-3 bg-slate-50 border-b border-slate-150">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={guardianSearchQuery}
+                    onChange={(e) => setGuardianSearchQuery(e.target.value)}
+                    placeholder="Masukkan nama wali, No. WA, atau nama santri..."
+                    className="w-full pl-9 pr-8 py-2 bg-white border border-slate-205 rounded-xl text-xs focus:outline-hidden focus:border-slate-800 transition-all font-semibold text-slate-800"
+                    autoFocus
+                  />
+                  {guardianSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setGuardianSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Contacts list scrollable container */}
+              <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-white">
+                {filteredGuardians.length === 0 ? (
+                  <div className="py-12 text-center space-y-2">
+                    <span className="text-3xl block">🔍</span>
+                    <p className="text-xs text-slate-400 font-extrabold">Data tidak ditemukan</p>
+                    <p className="text-[10px] text-slate-400 font-medium max-w-xs mx-auto px-4">
+                      Pastikan ejaan benar atau gunakan kata kunci pencarian yang lain.
+                    </p>
+                  </div>
+                ) : (
+                  filteredGuardians.map((g, idx) => (
+                    <button
+                      type="button"
+                      key={idx}
+                      onClick={() => {
+                        setGuardianName(g.name);
+                        setGuardianPhone(g.phone);
+                        setShowGuardianSearch(false);
+                        setGuardianSearchQuery('');
+                      }}
+                      className="w-full text-left p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all flex items-start gap-3 cursor-pointer group"
+                    >
+                      <div className="p-2 bg-slate-100 group-hover:bg-red-50 text-slate-500 group-hover:text-red-600 rounded-xl transition-all shrink-0">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-red-700 block truncate transition-colors">
+                            {g.name}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold text-slate-500 group-hover:text-red-600 transition-colors whitespace-nowrap">
+                            {g.phone}
+                          </span>
+                        </div>
+                        {g.studentNames.length > 0 && (
+                          <p className="text-[10px] text-slate-500 font-semibold mt-0.5 truncate leading-tight">
+                            Santri: <span className="text-slate-800 font-bold">{g.studentNames.join(', ')}</span>
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {/* Footer stats badge */}
+              <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+                <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest block">
+                  Total {uniqueGuardians.length} Kontak Wali Terdeteksi
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

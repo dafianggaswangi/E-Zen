@@ -365,19 +365,6 @@ Mohon verifikasi kepulangan santri ketika kembali ke asrama melalui aplikasi E-Z
 
                     {/* Integrated Action Buttons */}
                     <div className="p-3 bg-slate-50 border-t border-slate-105 flex flex-col sm:flex-row gap-2">
-                      
-                      {satpamPhone && (
-                        <button
-                          type="button"
-                          onClick={() => handleSendToSatpamWhatsApp(permission)}
-                          className="w-full sm:w-auto px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[10.5px] font-black text-slate-700 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                          title="Kirim SMS/WA Info ke Satpam"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5 text-red-650" />
-                          Kirim WA Satpam
-                        </button>
-                      )}
-
                       <button
                         type="button"
                         onClick={() => handleVerifyIn(permission)}

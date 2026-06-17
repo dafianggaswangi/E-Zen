@@ -81,13 +81,6 @@ export default function Dashboard({ permissions, santriList, onNavigate, sheetsC
             >
               Buat Izin Baru
             </button>
-            <button 
-              onClick={() => onNavigate('integrasi-sheets')}
-              className="bg-white/10 hover:bg-white/15 text-white font-bold text-xs px-4 py-2 rounded-lg border border-white/10 backdrop-blur-sm transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              Sambungkan Sheet
-            </button>
           </div>
         </div>
       </div>
@@ -333,6 +326,30 @@ export default function Dashboard({ permissions, santriList, onNavigate, sheetsC
               <li>Tersimpan otomatis secara lokal dan tersambung Google Sheets.</li>
               <li>Gunakan tombol <b>Kirim WA</b> di menu log untuk melakukan redirect pesan notifikasi ke wali santri.</li>
             </ol>
+          </div>
+
+          {/* Troubleshooting card */}
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 md:p-5 space-y-2.5 text-slate-600 shadow-3xs">
+            <h3 className="text-[10px] font-extrabold text-amber-850 tracking-wider uppercase flex items-center gap-1.5 font-bold">
+              <span>⚠️ Sinkronisasi Masalah</span>
+            </h3>
+            <p className="text-[11px] text-amber-800 leading-normal font-semibold">
+              Jika data santri atau log izin tidak sinkron dengan cloud database Firestore, bersihkan cache data lokal browser Anda untuk memuat ulang data segar terbaru.
+            </p>
+            <button 
+              onClick={() => {
+                if (window.confirm('Apakah Anda yakin ingin membersihkan data cache santri & perizinan lokal? Tindakan ini akan memuat ulang aplikasi untuk mengambil data segar terbaru dari Firestore Cloud.')) {
+                  localStorage.removeItem('pesantren_santri');
+                  localStorage.removeItem('pesantren_permissions');
+                  localStorage.removeItem('pesantren_ustadz');
+                  localStorage.removeItem('pesantren_sheets_config');
+                  window.location.reload();
+                }
+              }}
+              className="w-full mt-1.5 px-3 py-2 text-[10.5px] bg-amber-605 text-amber-900 border border-amber-200 bg-white hover:bg-amber-100 font-extrabold rounded-lg transition-all shadow-3xs cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              🧹 Bersihkan Data Lokal
+            </button>
           </div>
         </div>
 

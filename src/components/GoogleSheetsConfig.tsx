@@ -780,6 +780,46 @@ function doPost(e) {
           </div>
         </div>
 
+        {/* Local state troubleshoot maintenance card */}
+        <div className="bg-white rounded-xl border border-amber-100 p-6 md:p-7 shadow-xs space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+              <span className="p-1.5 bg-amber-100 text-amber-800 rounded-lg text-xs">🧹</span>
+              Pemeliharaan & Keandalan Sinkronisasi
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">
+              Gunakan pembersihan data lokal jika Anda mendapati data santri atau perizinan tidak sinkron, bertabrakan, atau berbeda dari kondisi riil di Firebase Firestore.
+            </p>
+          </div>
+
+          <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-lg text-xs text-amber-900 font-semibold leading-relaxed space-y-1.5">
+            <span className="font-extrabold text-amber-950 block">Menyelesaikan Masalah Sinkronisasi:</span>
+            <p>
+              Dengan menekan tombol bersihkan, seluruh cache data santri, perizinan, dan konfigurasi lokal pada browser Anda akan dihapus sepenuhnya. 
+            </p>
+            <p className="text-[11px] text-amber-850">
+              Sistem kemudian akan memuat ulang halaman secara otomatis untuk mengambil salinan data yang valid dan terbaru langsung dari Firestore Cloud database secara aman.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                if (window.confirm('Apakah Anda yakin ingin bersihkan seluruh cache data lokal browser? Aplikasi akan langsung memuat ulang halaman kembali untuk menyinkronkan data segar dari cloud.')) {
+                  localStorage.removeItem('pesantren_santri');
+                  localStorage.removeItem('pesantren_permissions');
+                  localStorage.removeItem('pesantren_ustadz');
+                  localStorage.removeItem('pesantren_sheets_config');
+                  window.location.reload();
+                }
+              }}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-lg transition-colors shadow-3xs cursor-pointer flex items-center gap-1.5"
+            >
+              Bersihkan Data Lokal
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* Guide & Tutorial Panel */}

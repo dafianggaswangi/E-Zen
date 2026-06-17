@@ -63,6 +63,7 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
   // Guardian Search States & Data Extraction
   const [showGuardianSearch, setShowGuardianSearch] = useState(false);
   const [guardianSearchQuery, setGuardianSearchQuery] = useState('');
+  const [contactPickerError, setContactPickerError] = useState<string | null>(null);
 
   const uniqueGuardians = React.useMemo(() => {
     const result: { name: string; phone: string; studentNames: string[] }[] = [];
@@ -110,8 +111,13 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
   }, [uniqueGuardians, guardianSearchQuery]);
 
   const handlePickDeviceContact = async () => {
+    // Check if we are currently embedded inside an iframe (like AI Studio preview)
+    const isInsideIframe = window.self !== window.top;
+
     if (!('contacts' in navigator && 'ContactsManager' in window)) {
-      alert('Browser atau Handphone Anda tidak mendukung Contact Picker API langsung. Silakan gunakan Google Chrome HP / Safari HTTPS, atau ketik kontak manual.');
+      setContactPickerError(
+        'Perangkat atau Browser Anda tidak mendukung Contact Picker API. Pastikan Anda membuka web menggunakan Google Chrome (Android) atau Safari (iOS terbaru) dengan protokol aman HTTPS.'
+      );
       return;
     }
     try {
@@ -135,7 +141,11 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
     } catch (err: any) {
       console.error('Pick contact error:', err);
       if (err.name !== 'AbortError') {
-        alert('Gagal mengambil kontak handphone: ' + err.message);
+        if (isInsideIframe || err.name === 'SecurityError' || err.message?.toLowerCase().includes('iframe') || err.message?.toLowerCase().includes('selector')) {
+          setContactPickerError('iframe-blocked');
+        } else {
+          setContactPickerError(err.message || 'Gagal mengakses kontak telepon di handphone Anda.');
+        }
       }
     }
   };
@@ -1317,6 +1327,106 @@ export default function PermissionForm({ santriList, permissions = [], onSubmit,
                   Total {uniqueGuardians.length} Kontak Wali Terdeteksi
                 </span>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {contactPickerError && (
+          <div className="fixed inset-0 z-250 flex items-center justify-center p-4">
+            {/* Background Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setContactPickerError(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
+            />
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full overflow-hidden relative z-10 p-5 md:p-6 space-y-4 text-left"
+            >
+              {/* Icon & Title */}
+              <div className="flex items-start gap-3.5">
+                <div className="p-3 bg-red-100 text-red-650 rounded-xl shrink-0">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+                    {contactPickerError === 'iframe-blocked' ? 'Keamanan Browser Membatasi Akses' : 'Gagal Mengakses Kontak'}
+                  </h3>
+                  <p className="text-[10.5px] text-slate-505 font-medium mt-0.5">
+                    {contactPickerError === 'iframe-blocked' 
+                      ? 'Browser membatasi pemilihan kontak HP di dalam IFrame Preview ini.'
+                      : 'Terjadi masalah saat mencoba mengakses daftar kontak HP Anda.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Instructional Context */}
+              {contactPickerError === 'iframe-blocked' ? (
+                <div className="space-y-3">
+                  <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-xs">
+                    <p className="font-bold text-slate-800 leading-normal">
+                      💡 Mengapa hal ini terjadi?
+                    </p>
+                    <p className="text-slate-600 leading-relaxed font-semibold">
+                      Browser (Chrome/Safari) secara default memblokir integrasi sensitif seperti pembacaan daftar telepon ketika aplikasi berjalan sebagai sub-elemen (<code className="bg-slate-100 px-1 py-0.5 rounded text-red-600">iframe</code>) di panel preview.
+                    </p>
+                    <p className="text-slate-600 font-bold">
+                      Cara agar fitur ini berjalan sukses di HP Anda:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-slate-600 pl-1 font-semibold">
+                      <li>Buka aplikasi langsung secara mandiri di tab atau jendela browser baru.</li>
+                      <li>
+                        Klik tombol <b className="text-slate-850">Buka Tab Baru / Open in new tab</b> ↗️ di pojok kanan atas portal ini.
+                      </li>
+                      <li>Ketuk tombol <span className="text-xs">📱</span> <b>Pilih Kontak HP</b> kembali setelah masuk di jendela mandiri.</li>
+                    </ol>
+                  </div>
+
+                  {/* Copy URL help */}
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        alert('Link aplikasi berhasil disalin! Silakan tempel di browser HP Anda.');
+                      }}
+                      className="flex-1 py-2 px-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 rounded-xl transition-all font-extrabold text-center cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      🔗 Salin Link Aplikasi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setContactPickerError(null)}
+                      className="px-5 py-2 text-xs bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-xl transition-all shadow-3xs cursor-pointer text-center"
+                    >
+                      Ok, Mengerti
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-3.5 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-900 font-semibold leading-relaxed">
+                    <p>{contactPickerError}</p>
+                    <p className="mt-2 text-[11px] text-slate-500 font-medium">
+                      Silakan ketikkan nama & nomor WhatsApp wali secara langsung pada kolom form, atau gunakan fitur <b>Cari Kontak</b> untuk memuat dari riwayat perizinan santri yang pernah diinput sebelumnya.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => setContactPickerError(null)}
+                      className="px-5 py-2 text-xs bg-slate-900 hover:bg-slate-850 text-white font-extrabold rounded-xl transition-all shadow-3xs cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

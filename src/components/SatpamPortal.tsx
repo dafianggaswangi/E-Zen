@@ -233,34 +233,6 @@ Mohon verifikasi kepulangan santri ketika kembali ke asrama melalui aplikasi E-Z
               </h3>
               <p className="text-xs text-slate-500">Hanya menampilkan santri dengan status keberangkatan "Sedang Berjalan".</p>
             </div>
-            {(() => {
-              const activePhones = [
-                { name: sheetsConfig?.satpamName ? `${sheetsConfig.satpamName} (Pos 1)` : 'Pos 1', val: sheetsConfig?.satpamPhone },
-                { name: sheetsConfig?.satpamName2 ? `${sheetsConfig.satpamName2} (Pos 2)` : 'Pos 2', val: sheetsConfig?.satpamPhone2 },
-                { name: sheetsConfig?.satpamName3 ? `${sheetsConfig.satpamName3} (Pos 3)` : 'Pos 3', val: sheetsConfig?.satpamPhone3 },
-                { name: sheetsConfig?.satpamName4 ? `${sheetsConfig.satpamName4} (Pos 4)` : 'Pos 4', val: sheetsConfig?.satpamPhone4 },
-                { name: sheetsConfig?.satpamName5 ? `${sheetsConfig.satpamName5} (Pos 5)` : 'Pos 5', val: sheetsConfig?.satpamPhone5 },
-              ].filter(p => !!p.val);
-
-              if (activePhones.length === 0) {
-                return satpamPhone ? (
-                  <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-lg">
-                    Telepon Pos: {satpamPhone}
-                  </span>
-                ) : null;
-              }
-
-              return (
-                <div className="flex flex-wrap gap-1.5 items-center justify-end">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Telepon Pos Aktif:</span>
-                  {activePhones.map((p, i) => (
-                    <span key={i} className="text-[10px] font-bold text-red-650 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md" title={`Nomor ${p.name}`}>
-                      {p.name}: {p.val}
-                    </span>
-                  ))}
-                </div>
-              );
-            })()}
           </div>
 
           {/* Clean Red-outline Search Input with Speech Search Integration */}

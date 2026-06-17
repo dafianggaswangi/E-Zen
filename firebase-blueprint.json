@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "santri": {
+      "title": "Santri",
+      "description": "Informasi database santri untuk autocomplete perizinan",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID unik santri (misal S001)" },
+        "name": { "type": "string", "description": "Nama lengkap santri" },
+        "className": { "type": "string", "description": "Pendidikan / Kelas" },
+        "roomName": { "type": "string", "description": "Asrama / Kamar santri" },
+        "guardianName": { "type": "string", "description": "Nama wali santri" },
+        "guardianPhone": { "type": "string", "description": "Nomor WhatsApp wali santri" }
+      },
+      "required": ["id", "name", "className"]
+    },
+    "leavePermission": {
+      "title": "LeavePermission",
+      "description": "Log surat izin keluar santri",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID unik surat perizinan (IZN-xxx)" },
+        "studentId": { "type": "string", "description": "ID referensi santri" },
+        "studentName": { "type": "string", "description": "Nama santri saat berizin" },
+        "className": { "type": "string", "description": "Kelas santri saat berizin" },
+        "roomName": { "type": "string", "description": "Kamar/Asrama santri" },
+        "guardianName": { "type": "string", "description": "Nama wali Penanggung Jawab" },
+        "guardianPhone": { "type": "string", "description": "Nomor WhatsApp wali" },
+        "leaveType": { "type": "string", "enum": ["Izin", "Pulang", "Keluar"], "description": "Jenis Kepergian" },
+        "reason": { "type": "string", "description": "Alasan perizinan" },
+        "startDate": { "type": "string", "format": "date", "description": "Tanggal mulai izin" },
+        "endDate": { "type": "string", "format": "date", "description": "Tanggal selesai izin" },
+        "returnTime": { "type": "string", "description": "Jam batas kembali" },
+        "status": { "type": "string", "enum": ["Pending", "Disetujui", "Ditolak", "Sedang Berjalan", "Kembali"], "description": "Status Terkini" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Waktu pembuatan data" },
+        "returnedAt": { "type": "string", "format": "date-time", "description": "Waktu kedatangan kembali" },
+        "notifiedAt": { "type": "string", "format": "date-time", "description": "Status notifikasi WhatsApp terkirim" }
+      },
+      "required": ["id", "studentId", "studentName", "className", "leaveType", "reason", "startDate", "endDate", "status", "createdAt"]
+    },
+    "ustadz": {
+      "title": "Ustadz",
+      "description": "Akun pengurus ustadz yang berwewenang di sistem",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string", "description": "Username login ustadz" },
+        "name": { "type": "string", "description": "Nama lengkap ustadz" },
+        "passcode": { "type": "string", "description": "PIN login keamanan (4 digit numeric)" }
+      },
+      "required": ["username", "name", "passcode"]
+    },
+    "sheetsConfig": {
+      "title": "SheetsConfig",
+      "description": "Konfigurasi sync opsional ke google sheets dan WA group",
+      "type": "object",
+      "properties": {
+        "sheetUrl": { "type": "string", "description": "Tautan URL spreadsheet" },
+        "sheetId": { "type": "string", "description": "ID spreadsheet unik" },
+        "apiKey": { "type": "string", "description": "Kunci API opsional" },
+        "appsScriptUrl": { "type": "string", "description": "URL deploy Google Apps Script" },
+        "syncEnabled": { "type": "boolean", "description": "Status sinkronisasi aktif" },
+        "whatsappGroupLink": { "type": "string", "description": "Tautan undangan Grup WhatsApp" },
+        "useWhatsAppGroup": { "type": "boolean", "description": "Prioritaskan kirim WA ke Group" },
+        "satpamPhone": { "type": "string", "description": "Nomor WhatsApp Satpam/Pos Gerbang" }
+      },
+      "required": ["syncEnabled"]
+    },
+    "prayerAttendance": {
+      "title": "PrayerAttendance",
+      "description": "Log absensi shalat berjamaah harian santri",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "description": "Tanggal absensi (YYYY-MM-DD)" },
+        "prayer": { "type": "string", "description": "Nama waktu shalat" },
+        "updatedAt": { "type": "string", "description": "Waktu update terakhir" },
+        "records": { "type": "object", "description": "Map studentId ke status absensi (Hadir, Masbuk, dsb)" }
+      },
+      "required": ["date", "prayer", "updatedAt", "records"]
+    }
+  },
+  "firestore": {
+    "santri": {
+      "schema": "santri",
+      "description": "Collection database santri global"
+    },
+    "permissions": {
+      "schema": "leavePermission",
+      "description": "Collection log izin keluar santri global"
+    },
+    "ustadz": {
+      "schema": "ustadz",
+      "description": "Collection akun ustadz administrator"
+    },
+    "sheetsConfig": {
+      "schema": "sheetsConfig",
+      "description": "Pengaturan sinkronisasi sheets dan whatsapp"
+    },
+    "prayerAttendance": {
+      "schema": "prayerAttendance",
+      "description": "Collection absensi shalat harian"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "E-Zen",
+  "description": "Sistem perizinan santri terintegrasi dengan basis data Google Sheets dan notifikasi otomatis WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

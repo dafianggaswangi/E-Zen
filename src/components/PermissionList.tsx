@@ -465,8 +465,9 @@ _Kantor Pengasuhan Pondok Pesantren_`;
         // Fallback open
         window.open(sheetsConfig.whatsappGroupLink, '_blank', 'noopener,noreferrer');
       });
-    } else if (waTarget === 'satpam' && sheetsConfig?.satpamPhone) {
-      const cleanPhone = sheetsConfig.satpamPhone.replace(/[^0-9]/g, '');
+    } else if (waTarget === 'satpam' && (activeWaPermission.satpamPhone || sheetsConfig?.satpamPhone)) {
+      const targetPhone = activeWaPermission.satpamPhone || sheetsConfig?.satpamPhone || '';
+      const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
       const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
       window.open(waUrl, '_blank', 'noopener,noreferrer');
     } else {
@@ -1120,7 +1121,7 @@ _Kantor Pengasuhan Pondok Pesantren_`;
                 </div>
 
                 {/* Target Destination Switcher */}
-                {(sheetsConfig?.whatsappGroupLink || sheetsConfig?.satpamPhone) && (
+                {(sheetsConfig?.whatsappGroupLink || sheetsConfig?.satpamPhone || activeWaPermission.satpamPhone) && (
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Tujuan Notifikasi (WhatsApp)</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1155,7 +1156,7 @@ _Kantor Pengasuhan Pondok Pesantren_`;
                         </button>
                       )}
 
-                      {sheetsConfig?.satpamPhone && (
+                      {(sheetsConfig?.satpamPhone || activeWaPermission.satpamPhone) && (
                         <button
                           type="button"
                           onClick={() => handleChangeTarget('satpam')}
@@ -1191,8 +1192,8 @@ _Kantor Pengasuhan Pondok Pesantren_`;
                       </div>
                     ) : waTarget === 'satpam' ? (
                       <div>
-                        <span className="font-bold text-slate-900 block">Pos Satpam / Gerbang</span>
-                        <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">Tujuan: {sheetsConfig?.satpamPhone}</span>
+                        <span className="font-bold text-slate-900 block">{activeWaPermission.satpamName || sheetsConfig?.satpamName || 'Pos Satpam'}</span>
+                        <span className="text-[10px] text-slate-500 font-semibold block mt-0.5 font-mono">Tujuan: {activeWaPermission.satpamPhone || sheetsConfig?.satpamPhone || '-'}</span>
                       </div>
                     ) : (
                       <div>
